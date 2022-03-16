@@ -41,7 +41,6 @@ export default HMedia;
 
 const HMovie = styled.View`
 padding: 0 30px;
-margin: 10px 0;
 flex-direction: row;
 `;
 
