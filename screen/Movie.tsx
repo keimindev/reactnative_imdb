@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import styled from 'styled-components/native';
 import Swiper from 'react-native-web-swiper';
-import { ActivityIndicator, Dimensions, ScrollView } from 'react-native';
+import { ActivityIndicator, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import Slide from "../components/Slide"
 import Poster from '../components/Poster';
+import HMedia from '../components/HMedia';
+import VMedia from '../components/VMedia';
 
 const API= "";
 
 const { height : SCREEN_HEIGHT} = Dimensions.get("window");
 
 const Movie = () => {
+  const [refreshing, setRefreshing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [nowPlaying, setNowPlaying] = useState([])
   const [upcoming, setUpcoming] = useState([]);
@@ -24,7 +27,7 @@ const Movie = () => {
   }
   const getUpcoming = async() =>{
     const { results } = await (
-      await fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${API}&language=en-US&page=1&region=KR`
+      await fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${API}&language=en-US&page=1`
     )).json()
     setUpcoming(results)
 
@@ -52,12 +55,20 @@ const Movie = () => {
     getData();
   },[])
 
+  //refresh screen 
+  const onRefresh = async() => {
+    setRefreshing(true);
+    await getData();
+    setRefreshing(false)
+  }
+
   return loading ? (
       <Loader>
         <ActivityIndicator size="large"/>
       </Loader>
       ) : (
-      <Container>
+      <Container
+      refreshControl ={<RefreshControl onRefresh={onRefresh} refreshing ={refreshing} />}>
         <Swiper 
         loop 
         timeout={3.5}
@@ -77,16 +88,23 @@ const Movie = () => {
         showsHorizontalScrollIndicator={false} 
         contentContainerStyle={{paddingLeft: 30}}>
           {trending.map( movie => 
-          <Movies key={movie.id}>
-           <Poster path={movie.poster_path}/>
-           <Title>
-             {movie.original_title.slice(0,13)}
-             {movie.original_title.length > 13 ? "..." : null}
-          </Title>
-           <Votes>⭐{movie.vote_average}/10</Votes>
-          </Movies>
+              <VMedia 
+              key={movie.id} 
+              posterPath={movie.poster_path}
+              originalTitle={movie.original_title}
+              voteAverage={movie.vote_average} 
+            />
         )}
         </TrendingScroll>
+        <ComingsoonTitle>Coming soon</ComingsoonTitle>
+        {upcoming.map(movie => 
+        <HMedia key={movie.id} 
+                posterPath={movie.poster_path}
+                originalTitle={movie.original_title}
+                voteAverage={movie.vote_average}
+                overview={movie.overview}
+                releaseDate = {movie.release_data} 
+          />)}
         </Container>
   )
 }
@@ -109,18 +127,14 @@ font-weight: 600;
 margin-left: 20px;
 `;
 
-const Movies = styled.View`
-margin-right: 20px;
-align-items: center;
-`;
+
 
 const TrendingScroll = styled.ScrollView`
 margin-top: 20px;
 `;
 
-const Title = styled.Text`
-margin-top: 7px;
-margin-bottom: 5px;
-font-weight: 600;
-`
-const Votes = styled.Text``
+
+const ComingsoonTitle = styled(ListTitle)`
+margin-top: 20px;
+margin-bottom: 20px;
+`;
